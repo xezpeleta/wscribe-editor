@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  wscribe-editor:
+    build: .
+    ports:
+      - "3000:3000"
+    container_name: wscribe-editor
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    volumes:
+      # Mount the public directory for static assets
+      - ./public:/app/public:ro
+    networks:
+      - wscribe-network
+
+networks:
+  wscribe-network:
+    driver: bridge
