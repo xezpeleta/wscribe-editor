@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import {
   msToTimestamp,
   timestampToMs,
@@ -8,6 +8,8 @@ import {
   SubtitleNode,
   trackToList,
   exportFormatsFn,
+  getUrlParams,
+  getFileNameFromUrl,
 } from "../src/utils";
 import type { TranscribedData } from "../src/types";
 
@@ -124,5 +126,47 @@ describe("export stuff", () => {
     expect(fn(trackToList(track))).toMatchFileSnapshot(
       `./goldens/${format}_formatted_string_data`,
     );
+  });
+});
+
+describe("URL parameter utilities", () => {
+  beforeEach(() => {
+    // Mock window.location
+    delete (window as any).location;
+    (window as any).location = { search: "" };
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("getUrlParams returns empty object when no params", () => {
+    (window as any).location.search = "";
+    expect(getUrlParams()).toEqual({});
+  });
+
+  it("getUrlParams extracts media and subtitle parameters", () => {
+    (window as any).location.search = "?media=https://example.com/audio.mp3&subtitle=https://example.com/subtitle.srt";
+    expect(getUrlParams()).toEqual({
+      mediaUrl: "https://example.com/audio.mp3",
+      subtitleUrl: "https://example.com/subtitle.srt"
+    });
+  });
+
+  it("getUrlParams handles partial parameters", () => {
+    (window as any).location.search = "?media=https://example.com/audio.mp3";
+    expect(getUrlParams()).toEqual({
+      mediaUrl: "https://example.com/audio.mp3"
+    });
+  });
+
+  it("getFileNameFromUrl extracts filename from URL", () => {
+    expect(getFileNameFromUrl("https://example.com/path/to/file.srt")).toBe("file.srt");
+    expect(getFileNameFromUrl("https://example.com/audio.mp3")).toBe("audio.mp3");
+    expect(getFileNameFromUrl("https://example.com/")).toBe("unknown_file");
+  });
+
+  it("getFileNameFromUrl handles invalid URLs", () => {
+    expect(getFileNameFromUrl("not-a-url")).toBe("unknown_file");
   });
 });

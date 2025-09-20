@@ -85,7 +85,10 @@
   }
 
   onMount(() => {
-    initWaveForm();
+    // Wait a bit for URL-based media to load, then initialize waveform
+    setTimeout(() => {
+      initWaveForm();
+    }, 100);
 
     window.addEventListener("keydown", handleSpaceKeyPress);
 

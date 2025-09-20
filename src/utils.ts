@@ -8,6 +8,37 @@ import type {
 import { parse as subtitleparser } from "@plussub/srt-vtt-parser";
 import { nanoid } from "nanoid";
 
+// URL parameter utilities
+export function getUrlParams(): { mediaUrl?: string; subtitleUrl?: string } {
+  const urlParams = new URLSearchParams(window.location.search);
+  return {
+    mediaUrl: urlParams.get('media') || undefined,
+    subtitleUrl: urlParams.get('subtitle') || undefined,
+  };
+}
+
+export async function fetchFileFromUrl(url: string): Promise<string> {
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch file: ${response.status} ${response.statusText}`);
+    }
+    return await response.text();
+  } catch (error) {
+    throw new Error(`Network error fetching ${url}: ${error.message}`);
+  }
+}
+
+export function getFileNameFromUrl(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    const pathname = urlObj.pathname;
+    return pathname.split('/').pop() || 'unknown_file';
+  } catch {
+    return 'unknown_file';
+  }
+}
+
 function timestampToMs(timestamp: string) {
   const [time, milliseconds] = timestamp.split(".");
   const [hours, minutes, seconds] = time.split(":").map(parseFloat);

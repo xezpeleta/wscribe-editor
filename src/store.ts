@@ -5,6 +5,10 @@ import {
   sanitizeContent,
   SubtitleTrack,
   SubtitleNode,
+  getUrlParams,
+  fetchFileFromUrl,
+  getFileNameFromUrl,
+  fileParseFn,
 } from "./utils";
 import type { TranscribedData } from "./types";
 import sampletranscriptdata from "./assets/wscribe_editor_into.json";
@@ -127,25 +131,12 @@ const resetNodeNextPrev = (
 };
 
 const rawTranscriptDataStore = writable({});
-rawTranscriptDataStore.set(sanitizeContent(sampletranscriptdata));
-
 const errListStore = createErrorStore();
 const currentPlaybackTime = writable(0);
 const wordLevelData = writable(true);
 const scoreView = writable(false);
 let subtitleTrackStore: ReturnType<typeof createSubtitleTrackStore>;
 let transcriptTrackStore: ReturnType<typeof createSubtitleTrackStore>;
-let strack: SubtitleTrack, ttrack: SubtitleTrack;
-try {
-  [strack, ttrack] = subTitleTrackFromSegmentData(
-    get(rawTranscriptDataStore) as TranscribedData[],
-  );
-  subtitleTrackStore = createSubtitleTrackStore(strack);
-  transcriptTrackStore = createSubtitleTrackStore(ttrack);
-} catch (e) {
-  console.error(e);
-  errListStore.addToList(e.message);
-}
 const waveStore = writable(null);
 const mediaStoreURL = writable("/wscribe_editor_intro.mp3");
 const isPlayable = writable(false);
@@ -153,6 +144,94 @@ const fileInfo = writable({
   mediaFileName: null,
   transcriptFileName: null,
 });
+
+// Initialize with URL parameters or default files
+async function initializeStores() {
+  const urlParams = getUrlParams();
+  
+  try {
+    // Handle subtitle file from URL or use default
+    if (urlParams.subtitleUrl) {
+      try {
+        const subtitleContent = await fetchFileFromUrl(urlParams.subtitleUrl);
+        const fileName = getFileNameFromUrl(urlParams.subtitleUrl);
+        const parseFn = fileParseFn(fileName);
+        const parsedData = sanitizeContent(parseFn(subtitleContent));
+        rawTranscriptDataStore.set(parsedData);
+        wordLevelData.set("words" in parsedData[0]);
+        fileInfo.update((e) => ({
+          ...e,
+          transcriptFileName: fileName,
+        }));
+      } catch (e) {
+        console.error("Failed to load subtitle from URL:", e);
+        errListStore.addToList(`Failed to load subtitle file from URL: ${e.message}`);
+        // Fallback to default subtitle data
+        rawTranscriptDataStore.set(sanitizeContent(sampletranscriptdata));
+        fileInfo.update((e) => ({
+          ...e,
+          transcriptFileName: "wscribe_editor_intro.json",
+        }));
+      }
+    } else {
+      // Use default sample data
+      rawTranscriptDataStore.set(sanitizeContent(sampletranscriptdata));
+      fileInfo.update((e) => ({
+        ...e,
+        transcriptFileName: "wscribe_editor_intro.json",
+      }));
+    }
+
+    // Handle media file from URL or use default
+    if (urlParams.mediaUrl) {
+      try {
+        // Validate URL format
+        new URL(urlParams.mediaUrl);
+        mediaStoreURL.set(urlParams.mediaUrl);
+        const fileName = getFileNameFromUrl(urlParams.mediaUrl);
+        fileInfo.update((e) => ({
+          ...e,
+          mediaFileName: fileName,
+        }));
+      } catch (e) {
+        console.error("Invalid media URL:", e);
+        errListStore.addToList(`Invalid media URL: ${e.message}`);
+        // Keep default media file
+        fileInfo.update((e) => ({
+          ...e,
+          mediaFileName: "wscribe_editor_intro.mp3",
+        }));
+      }
+    } else {
+      fileInfo.update((e) => ({
+        ...e,
+        mediaFileName: "wscribe_editor_intro.mp3",
+      }));
+    }
+
+    // Initialize subtitle tracks
+    let strack: SubtitleTrack, ttrack: SubtitleTrack;
+    [strack, ttrack] = subTitleTrackFromSegmentData(
+      get(rawTranscriptDataStore) as TranscribedData[],
+    );
+    subtitleTrackStore = createSubtitleTrackStore(strack);
+    transcriptTrackStore = createSubtitleTrackStore(ttrack);
+  } catch (e) {
+    console.error("Store initialization error:", e);
+    errListStore.addToList(`Initialization error: ${e.message}`);
+    // Fallback to default data on error
+    rawTranscriptDataStore.set(sanitizeContent(sampletranscriptdata));
+    let strack: SubtitleTrack, ttrack: SubtitleTrack;
+    [strack, ttrack] = subTitleTrackFromSegmentData(
+      get(rawTranscriptDataStore) as TranscribedData[],
+    );
+    subtitleTrackStore = createSubtitleTrackStore(strack);
+    transcriptTrackStore = createSubtitleTrackStore(ttrack);
+  }
+}
+
+// Initialize stores
+initializeStores();
 
 export {
   errListStore,
