@@ -474,7 +474,8 @@ const fileName = (ext: string, transcriptExport: boolean): string => {
 };
 
 const fileParseFn = (fileName: string): any => {
-  let ext = fileName.split(".")[1]; // assuming filename.ext
+  // Get the actual file extension (last part after the last dot)
+  let ext = fileName.split(".").pop()?.toLowerCase();
   switch (ext) {
     case "json":
       return JSON.parse;
