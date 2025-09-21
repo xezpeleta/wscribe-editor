@@ -11,6 +11,7 @@
     errListStore,
     transcriptTrackStore,
     scoreView,
+    storesInitialized,
   } from "./store";
 
   // NOTE: Not a fan of how I have to run resetTrack because it's a generator
@@ -21,13 +22,17 @@
   let transcriptView = true;
   const toggleScoreView = () => {
     $scoreView = !$scoreView;
-    currentTrack.resetTrack();
+    if (currentTrack) {
+      currentTrack.resetTrack();
+    }
   };
   const toggleTranscriptView = () => {
     transcriptView = !transcriptView;
-    currentTrack.resetTrack();
+    if (currentTrack) {
+      currentTrack.resetTrack();
+    }
   };
-  $: currentTrack = transcriptView ? transcriptTrackStore : subtitleTrackStore;
+  $: currentTrack = $storesInitialized ? (transcriptView ? transcriptTrackStore : subtitleTrackStore) : null;
 </script>
 
 <main>
@@ -37,14 +42,16 @@
     </div>
     <div class="flex grow">
       <div class="w-3/4 px-4 flex flex-col justify-around">
-        {#if $errListStore.length === 0}
+        {#if $errListStore.length === 0 && currentTrack}
           <MainEditor {currentTrack} />
           <BottomPlayer />
         {/if}
       </div>
       <div class="flex w-1/4 flex-col">
         <div class="grow bg-zinc-100">
-          <PlayerControl {currentTrack} />
+          {#if currentTrack}
+            <PlayerControl {currentTrack} />
+          {/if}
           <ErrorList errList={$errListStore} />
         </div>
         <div class="bg-zinc-200 py-12">

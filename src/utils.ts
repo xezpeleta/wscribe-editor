@@ -31,7 +31,9 @@ export async function fetchFileFromUrl(url: string): Promise<string> {
 
 export function getFileNameFromUrl(url: string): string {
   try {
-    const urlObj = new URL(url);
+    // Handle relative URLs by creating a full URL
+    const fullUrl = url.startsWith('http') ? url : new URL(url, window.location.origin).toString();
+    const urlObj = new URL(fullUrl);
     const pathname = urlObj.pathname;
     return pathname.split('/').pop() || 'unknown_file';
   } catch {

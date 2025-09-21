@@ -135,8 +135,14 @@ const errListStore = createErrorStore();
 const currentPlaybackTime = writable(0);
 const wordLevelData = writable(true);
 const scoreView = writable(false);
-let subtitleTrackStore: ReturnType<typeof createSubtitleTrackStore>;
-let transcriptTrackStore: ReturnType<typeof createSubtitleTrackStore>;
+
+// Track when stores are initialized
+const storesInitialized = writable(false);
+
+// These will be set after async initialization
+let subtitleTrackStore: ReturnType<typeof createSubtitleTrackStore> | null = null;
+let transcriptTrackStore: ReturnType<typeof createSubtitleTrackStore> | null = null;
+
 const waveStore = writable(null);
 const mediaStoreURL = writable("/wscribe_editor_intro.mp3");
 const isPlayable = writable(false);
@@ -216,6 +222,9 @@ async function initializeStores() {
     );
     subtitleTrackStore = createSubtitleTrackStore(strack);
     transcriptTrackStore = createSubtitleTrackStore(ttrack);
+    
+    // Notify that stores are now initialized
+    storesInitialized.set(true);
   } catch (e) {
     console.error("Store initialization error:", e);
     errListStore.addToList(`Initialization error: ${e.message}`);
@@ -227,6 +236,9 @@ async function initializeStores() {
     );
     subtitleTrackStore = createSubtitleTrackStore(strack);
     transcriptTrackStore = createSubtitleTrackStore(ttrack);
+    
+    // Notify that stores are now initialized
+    storesInitialized.set(true);
   }
 }
 
@@ -245,4 +257,5 @@ export {
   mediaStoreURL,
   isPlayable,
   fileInfo,
+  storesInitialized,
 };
