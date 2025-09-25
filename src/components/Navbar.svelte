@@ -1,5 +1,6 @@
 <script lang="ts">
   export let transcriptView;
+  import { get } from "svelte/store";
   import {
     rawTranscriptDataStore,
     subtitleTrackStore,
@@ -18,11 +19,19 @@
   import { exportFormatsFn, exportStuff, trackToList } from "../utils";
 
   const exportFile = (format: string) => {
-    if (transcriptView) {
-      exportStuff(format, trackToList($transcriptTrackStore), transcriptView);
-    } else {
-      exportStuff(format, trackToList($subtitleTrackStore), transcriptView);
+    const selectedStore = transcriptView ? (transcriptTrackStore as any) : (subtitleTrackStore as any);
+    if (!selectedStore) {
+      errListStore.addToList("Subtitles not ready yet. Try again in a moment.");
+      return;
     }
+    const track = get(selectedStore);
+
+    if (!track || typeof track.iterate !== "function") {
+      errListStore.addToList("Subtitles not ready yet. Try again in a moment.");
+      return;
+    }
+
+    exportStuff(format, trackToList(track), transcriptView);
   };
 
   async function handleTranscriptSelect(event) {
