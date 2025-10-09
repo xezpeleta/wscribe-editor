@@ -305,6 +305,7 @@ function segmentToNodeData(s: TranscribedData): SubtitleNodeData {
     end: s.end as number,
     text: s.text,
     uuid: nanoid(),
+    speaker: s.speaker,
     words: s.words,
     offsetEditMode: false,
     wordsHTML: s.words
@@ -458,7 +459,7 @@ const trackToList = (track: SubtitleTrack): ExportSegmentData[] => {
   for (let i of track.iterate() as unknown as Iterable<SubtitleNode>) {
     let div = document.createElement("div");
     div.innerHTML = i.data.wordsHTML.replace(/<br>/g, "\n");
-    arr.push({ start: i.data.start, end: i.data.end, text: div.innerText });
+    arr.push({ start: i.data.start, end: i.data.end, text: div.innerText, speaker: i.data.speaker });
   }
   return arr;
 };

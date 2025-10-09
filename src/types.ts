@@ -4,6 +4,7 @@ type SubtitleNodeData = {
   text: string;
   score: number;
   uuid: string;
+  speaker?: string;
   words?: WordData[];
   wordsHTML: string;
   offsetEditMode: boolean;
@@ -14,6 +15,7 @@ type TranscribedData = {
   start: number | string;
   end: number | string;
   score: number;
+  speaker?: string;
   words?: WordData[];
 };
 
@@ -28,6 +30,7 @@ type ExportSegmentData = {
   start: number;
   end: number;
   text: string;
+  speaker?: string;
 };
 
 type SessionMetadata = {

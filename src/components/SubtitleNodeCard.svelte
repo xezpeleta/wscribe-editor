@@ -114,6 +114,9 @@
     <div
       class="w-1/6 bg-yellow-100 flex flex-col justify-center text-xs rounded-lg pl-2 font-mono"
     >
+      {#if node.data.speaker}
+        <div>SPK: {node.data.speaker}</div>
+      {/if}
       <div>D: {duration}s</div>
       <div>{msToTimestamp(startTs)}</div>
       <div>{msToTimestamp(endTs)}</div>
