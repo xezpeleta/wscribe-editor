@@ -253,19 +253,37 @@ class SubtitleTrack {
 // for other if needed. Possible groupings by Speaker(if Diarization), time,
 // break in dialogue, chapters, number of segments/lines chunks etc.
 function subtitleToTranscriptGroups(s: TranscribedData[]): TranscribedData[] {
-  // Make chunks
+  // Group by contiguous segments, limiting chunk size, and NEVER mix speakers
   const chunkSize = 10;
-  let chunkedSegmentData = s.reduce((resultArray, item, index) => {
-    const chunkIndex = Math.floor(index / chunkSize);
-    if (!resultArray[chunkIndex]) {
-      resultArray[chunkIndex] = [];
-    }
-    resultArray[chunkIndex].push(item);
-    return resultArray;
-  }, []);
+  const groups: TranscribedData[][] = [];
 
-  return chunkedSegmentData.map((p: TranscribedData[]) => {
-    // let res = { text: "", score: 0, start: 0, end: 0, words: [] };
+  let currentGroup: TranscribedData[] = [];
+  let currentSpeaker: string | undefined = undefined;
+
+  for (const seg of s) {
+    const segSpeaker = seg.speaker;
+    const speakerChanged =
+      currentGroup.length > 0 && segSpeaker !== currentSpeaker;
+
+    if (
+      currentGroup.length === 0 || (!speakerChanged && currentGroup.length < chunkSize)
+    ) {
+      // continue current group
+      currentGroup.push(seg);
+      currentSpeaker = segSpeaker;
+    } else {
+      // finalize current group and start a new one
+      groups.push(currentGroup);
+      currentGroup = [seg];
+      currentSpeaker = segSpeaker;
+    }
+  }
+  if (currentGroup.length > 0) {
+    groups.push(currentGroup);
+  }
+
+  return groups.map((p: TranscribedData[]) => {
+    const groupedSpeaker = p[0]?.speaker;
     let res: TranscribedData = {
       text: p
         .reduce((t: string, i: TranscribedData) => t + " " + i.text, "")
@@ -280,6 +298,7 @@ function subtitleToTranscriptGroups(s: TranscribedData[]): TranscribedData[] {
       words: p[0].words
         ? p.reduce((t: any[], i: TranscribedData) => [...t, ...i.words], [])
         : null,
+      speaker: groupedSpeaker,
     };
     return res;
   });
